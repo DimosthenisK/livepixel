@@ -1,0 +1,20 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - livepixel-pwa/**
+      - .github/workflows/deploy.yml
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: caprover/deploy-from-github@v2
+        with:
+          server: ${{ secrets.CAPROVER_SERVER }}
+          app: ${{ secrets.APP_NAME }}
+          token: ${{ secrets.APP_TOKEN }}
+          working-directory: livepixel-pwa

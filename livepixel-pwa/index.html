@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111">
+  <title>LivePixel</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header>
+    <h1>LivePixel</h1>
+    <p id="status">Not connected</p>
+    <button id="connect" type="button">Connect</button>
+    <button id="clear" type="button">Clear</button>
+    <button id="erase" type="button" aria-pressed="false">Draw</button>
+  </header>
+  <canvas id="board" width="128" height="64" aria-label="128 by 64 pixel canvas"></canvas>
+  <script src="app.js"></script>
+</body>
+</html>
