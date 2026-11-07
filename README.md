@@ -26,10 +26,23 @@ python3 dev.py
 
 Open `http://127.0.0.1:8080` in Chrome or Edge. Web Bluetooth does not run over plain HTTP except on localhost. Connect, then draw. Lit pixels are white. Each change starts a transfer. If a transfer is already running, later changes wait and the latest canvas is sent when the radio is free. A 250ms poll sends anything still waiting.
 
-## CapRover
+## Production (NixOS homeserver)
 
-`livepixel-pwa` is the app CapRover builds. `captain-definition` and `Dockerfile` sit in that directory, and the image serves the page with nginx on port 80. CapRover terminates HTTPS in front of that port.
+Production runs on the homeserver GitOps repo (`DimosthenisK/nix-homeserver`), not CapRover.
 
-Create an app named `livepixel`. Leave the container HTTP port at 80. Enable HTTPS, then force HTTPS. Web Bluetooth runs in Chrome or Edge only on that `https://` address, on a device that is next to the Pico.
+| URL | Scope |
+| --- | --- |
+| https://livepixel.dimosthenis.dev | Public (Cloudflare Tunnel) |
+| https://livepixel.afrino-macaroni.ts.net | Tailnet |
 
-A push to `main` that changes `livepixel-pwa` runs `.github/workflows/deploy.yml`. That packages `livepixel-pwa` by itself and sends it to CapRover. The repository secrets are `CAPROVER_SERVER`, `APP_NAME`, and `APP_TOKEN`. The Dockerfile copies the page from the root of that package.
+Stack path on the homeserver: `stacks/livepixel/` (nginx image, loopback `127.0.0.1:8086`). Static assets are vendored from `livepixel-pwa/` into that stack.
+
+To publish UI changes:
+
+1. Edit files under `livepixel-pwa/`
+2. Copy them into `~/Projects/nix-homeserver/stacks/livepixel/` (keep that stack’s `docker-compose.yml`)
+3. Commit and push `nix-homeserver` `main` (comin deploys), or run `sudo nixos-rebuild switch --flake ~/Projects/nix-homeserver#homeserver`
+
+Web Bluetooth needs HTTPS (or localhost) in Chrome/Edge, on a device next to the Pico.
+
+The `Dockerfile` + `nginx.conf` in `livepixel-pwa/` remain for local image builds (`docker build -t livepixel-pwa .`).
