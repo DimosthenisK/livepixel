@@ -1,0 +1,78 @@
+# Homeserver auto-deploy: build GHCR image, then POST deploy webhook.
+# Required repo secret: DEPLOY_WEBHOOK_TOKEN
+
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  # Homeserver docker compose project name (stacks/<STACK_NAME>/)
+  STACK_NAME: livepixel
+  REGISTRY: ghcr.io
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image name
+        id: image
+        run: |
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          repo="$(echo '${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')"
+          echo "name=${{ env.REGISTRY }}/${owner}/${repo}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: livepixel-pwa
+          file: livepixel-pwa/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:main
+            ${{ steps.image.outputs.name }}:sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Make package public (best-effort)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          owner="${{ github.repository_owner }}"
+          pkg="$(echo '${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')"
+          gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            "/user/packages/container/${pkg}/visibility" \
+            -f visibility=public \
+            || gh api \
+              --method PUT \
+              -H "Accept: application/vnd.github+json" \
+              "/orgs/${owner}/packages/container/${pkg}/visibility" \
+              -f visibility=public \
+            || true
+
+      - name: Trigger homeserver deploy webhook
+        env:
+          DEPLOY_WEBHOOK_TOKEN: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}
+        run: |
+          test -n "$DEPLOY_WEBHOOK_TOKEN"
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${DEPLOY_WEBHOOK_TOKEN}" \
+            "https://deploy.dimosthenis.dev/deploy/${STACK_NAME}"

@@ -28,21 +28,17 @@ Open `http://127.0.0.1:8080` in Chrome or Edge. Web Bluetooth does not run over 
 
 ## Production (NixOS homeserver)
 
-Production runs on the homeserver GitOps repo (`DimosthenisK/nix-homeserver`), not CapRover.
+Push `main` to this repo. GitHub Actions builds `livepixel-pwa/`, pushes `ghcr.io/dimosthenisk/livepixel:main`, then triggers `https://deploy.dimosthenis.dev/deploy/livepixel`.
 
 | URL | Scope |
 | --- | --- |
 | https://livepixel.dimosthenis.dev | Public (Cloudflare Tunnel) |
 | https://livepixel.afrino-macaroni.ts.net | Tailnet |
 
-Stack path on the homeserver: `stacks/livepixel/` (nginx image, loopback `127.0.0.1:8086`). Static assets are vendored from `livepixel-pwa/` into that stack.
-
-To publish UI changes:
-
-1. Edit files under `livepixel-pwa/`
-2. Copy them into `~/Projects/nix-homeserver/stacks/livepixel/` (keep that stack’s `docker-compose.yml`)
-3. Commit and push `nix-homeserver` `main` (comin deploys), or run `sudo nixos-rebuild switch --flake ~/Projects/nix-homeserver#homeserver`
+Homeserver compose (`DimosthenisK/nix-homeserver` `stacks/livepixel/`) is thin: it only pulls the GHCR image on loopback `127.0.0.1:8086`. Repo secret `DEPLOY_WEBHOOK_TOKEN` is required.
 
 Web Bluetooth needs HTTPS (or localhost) in Chrome/Edge, on a device next to the Pico.
 
-The `Dockerfile` + `nginx.conf` in `livepixel-pwa/` remain for local image builds (`docker build -t livepixel-pwa .`).
+Local image: `docker build -t livepixel-pwa ./livepixel-pwa`.
+
+Guide: https://github.com/DimosthenisK/homeserver-directory
