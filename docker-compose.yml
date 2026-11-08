@@ -1,0 +1,6 @@
+# Deployed by homeserver webhook (compose lives in this repo).
+# Host port is injected via docker-compose.override.yml on the server.
+services:
+  web:
+    image: ghcr.io/dimosthenisk/livepixel:main
+    restart: unless-stopped
